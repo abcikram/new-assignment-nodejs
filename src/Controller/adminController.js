@@ -1,7 +1,8 @@
 import Admin from '../models/adminModel.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken'
-import {isVAlidEmail,isValidName,isValidPassword,isValidPhone,isValid,isValidId} from '../validator/validator.js'
+import jwt from 'jsonwebtoken';
+import { isValidObjectId } from 'mongoose';
+import { Result,matchedData, validationResult } from 'express-validator';
 
 
 
@@ -9,64 +10,26 @@ import {isVAlidEmail,isValidName,isValidPassword,isValidPhone,isValid,isValidId}
 
 export const createAdmin = async (req, res) => {
     try {
-        const { name, phone, email, password,roles } = req.body;
-
-
-        if (Object.keys(req.body).length == 0) return res.status(400).send({ status: false, message: "Field can't be empty" });
-        
-        if (!name) return res.status(400).send({ status: false, message: "Admin name is required" })
-        if (!isValidName(name)) return res.status(400).send({ status: false, message: "Name miust be alphabetical order" })
-
-        if (!isValid(phone)) return res.status(400).send({ status: false, message: "Phone number is required" })
-
-        // validation for phone number:-
-        if (!isValidPhone(phone)) return res.status(400).send({ status: false, message: "Enter valid number, number must in ten digit" })
-
-        //  db call for checking duplicate number exists :-
-        const phones = await Admin.findOne({ phone: phone })
-        if (phones) return res.status(400).send({ status: false, message: "Phone number is already exists" })
-
-        if (!isValid(email)) return res.status(400).send({ status: false, message: "email is required" })
-
-        // validation for email:-
-        if (!isVAlidEmail(email)) return res.status(400).send({ status: false, message: "Please provide the valid email address" })
-
-
-        //  db call for checking duplicate email exists:-
-        const checkEmail = await Admin.findOne({ email: email })
-        if (checkEmail) {
-            return res.status(400).send({ status: false, message: "admin email is already exist" });
+        //today I learn:-
+        const error = validationResult(req);
+      //  console.log("error:",error);
+        if (!error.isEmpty()) {
+           return res.status(400).json({ errors: error.array()[0].msg});
         }
 
-
-        if (!password) {
-            return res.status(400).send({ status: false, message: "Please provide password" });
-        }
-
-        if (!isValidPassword(password)) {
-            return res.status(400).send({
-                staus: false,message: "Length of the password must be between 8 to 15 characters , atleast use one Uppercase"
-            });
-        }
+        const data = matchedData(req);
+        //console.log(data)
 
         //encripted password:-
         const salt = await bcrypt.genSalt(10);
-        const newPassword = await bcrypt.hash(password, salt)
+        const newPassword = await bcrypt.hash(data.password, salt)
         req.body.password = newPassword;
-
-
-        if (!roles) {
-            return res.status(400).send({ status: false, message: "Please provide roles" });
-        }
-        if (!["primary", "secondary"].includes(roles))
-            return res.status(400).send({ status: false, message: "roles must be  primary or secondary" })
         
         const admin = await Admin.create(req.body)
-       // console.log(admin)
 
-        res.status(201).send({ status: true, message: 'admin is created', data: admin })
+      return res.status(201).json({ status: true, message: 'admin is created', data: admin })
     } catch (error) {
-        res.status(500).send({ status: false, message: error.message })
+        return res.status(500).json({ status: false, message: error.message })
     }
 
 }
@@ -76,28 +39,23 @@ export const createAdmin = async (req, res) => {
 
 export const loginAdmin = async (req, res) => {
     try {
-        const { email, password } = req.body;
-
-        if (Object.keys(req.body).length == 0) return res.status(400).send({ status: false, message: "Field can't be empty" });
-
-
-        if (!(email)) {
-            return res.status(400).send({ status: false, message: "Email is required!!" })
-        }
+        const error = validationResult(req);
+        //  console.log("error:",error);
+          if (!error.isEmpty()) {
+             return res.status(400).json({ errors: error.array()[0].msg});
+          }
 
         // check email for admin
-        let adminEmail = await Admin.findOne({ email: email });
+        let adminEmail = await Admin.findOne({ email: req.body.email });
         if (!adminEmail) return res.status(400).send({ status: false, message: "Email is not correct, Please provide valid email" });
-
-        if (!(password)) {
-            return res.status(400).send({ status: false, message: "Password is required!!" })
-        }
-
-        const checkpass = await bcrypt.compare(password, adminEmail.password);
+        
+        
+        const checkpass = await bcrypt.compare(req.body.password, adminEmail.password);
+        console.log(checkpass);
 
         if (checkpass == false) return res.status(400).send({ status: false, message: "Please enter currect password" })
 
-        const admin = await Admin.findOne({ email: email, password: adminEmail.password })
+        const admin = await Admin.findOne({ email: req.body.email, password: adminEmail.password })
         if (!admin) return res.status(400).send({ status: false, message: "email or password are wrong" })
         console.log(admin.roles)
 
@@ -121,10 +79,14 @@ export const getAllAdmin = async (req, res) => {
     try {
         const userIdByToken = req.userId;
 
+        if(!isValidObjectId(userIdByToken)){
+            return res.status(400).send({status:false,message:"token is not valid"})
+        }
+
         const checkAdminroles = await Admin.findById(userIdByToken)
         if (!checkAdminroles) return res.status(404).send({ status: false, message: "Admin data not found" })
       
-        const adminAccess = await Admin.find({});
+        const adminAccess = await Admin.find({deleted:false});
 
         if(!adminAccess) return res.status(404).send({status:false,message:"Data not found"})
         
@@ -145,7 +107,12 @@ export const getAdminById = async (req, res) => {
 
         const userIdByToken = req.userId;
         
-        if (!isValidId(userIdByparams)) return res.status(400).send({ status: false, message: "Admin id is not validate"})
+        if (!isValidObjectId(userIdByparams)) return res.status(400).send({ status: false, message: "Admin id is not validate"})
+        
+        if(!isValidObjectId(userIdByToken)){
+            return res.status(400).send({status:false,message:"token is not valid"})
+        }
+
         const checkAdminroles = await Admin.findById(userIdByToken)
         if(!checkAdminroles) return res.status(404).send({status:false,message:"Admin data not found"})
      
@@ -155,6 +122,8 @@ export const getAdminById = async (req, res) => {
             const adminAccess = await Admin.findById(userIdByparams);
 
             if (!adminAccess) return res.status(404).send({ status: false, message: "Data not found" })
+
+            if (adminAccess.deleted == true) return res.status(404).send({ status: false, message: "Data is already deleted"})
 
             res.status(200).send({ status: true, data: adminAccess })
         } else {
@@ -171,49 +140,29 @@ export const getAdminById = async (req, res) => {
 
 export const updateAdmin = async (req, res) => {
     try {
-        const { name, phone, email, password, roles } = req.body;
-
-        if (name) { if (!isValidName(name)) return res.status(400).send({ status: false, message: "Name miust be alphabetical order" }); }
-        
-        if (phone) { if (!isValidPhone(phone)) return res.status(400).send({ status: false, message: "Enter valid number, number must in ten digit" }) }
-        
-        // validation for email:-
-        if (email) {
-            if (!isVAlidEmail(email)) return res.status(400).send({ status: false, message: "Please provide the valid email address" })
-        }
-      
-        if (password) {
-            if (!isValidPassword(password)) {
-                return res.status(400).send({
-                    staus: false, message: "Length of the password must be between 8 to 15 characters , atleast use one Uppercase"
-                });
-            } }
-        
-       
-        if (roles) {
-            if (!["primary", "secondary"].includes(roles))
-                return res.status(400).send({ status: false, message: "roles must be  primary or secondary" })
+          const error = validationResult(req);
+          //  console.log("error:",error);
+          if (!error.isEmpty()) {
+             return res.status(400).json({ errors: error.array()[0].msg});
           }
-       
+  
+        const data = matchedData(req);
 
         const userIdByparams = req.params.adminId;
-        
-        if (Object.keys(req.body).length == 0) {
-            return res.status(400).send({ status: false, message: "Body can't be empty , please enter some data" })
-        } 
        
         const userIdByToken = req.userId;
 
-        if (!isValidId(userIdByparams)) return res.status(400).send({ status: false, message: "Admin id is not validate" })
-        
+        if (!isValidObjectId(userIdByparams)) return res.status(400).send({ status: false, message: "Admin id is not validate" })
+        if(!isValidObjectId(userIdByToken))  return res.status(400).send({ status: false, message: "Token is not validate" })
+
         const checkAdminroles = await Admin.findById(userIdByToken)
         if (!checkAdminroles) return res.status(404).send({ status: false, message: "Admin data not found" })
 
         //authorization:-
         if (checkAdminroles.roles == 'primary' || (userIdByparams === userIdByToken)) {
 
-            const adminUpdate = await Admin.findOneAndUpdate({ _id: userIdByparams },
-                { $set: { name ,email,phone,password,roles} },
+            const adminUpdate = await Admin.findOneAndUpdate({ _id: userIdByparams ,deleted:false},
+                { $set: data },
                 { new: true },
             );
 
@@ -238,7 +187,7 @@ export const deleteAdmin = async (req, res) => {
 
         const userIdByToken = req.userId;
 
-        if (!isValidId(userIdByparams)) return res.status(400).send({ status: false, message: "Admin id is not validate" })
+        if (!isValidObjectId(userIdByparams)) return res.status(400).send({ status: false, message: "Admin id is not validate" })
 
         const checkAdminroles = await Admin.findById(userIdByToken)
         if (!checkAdminroles) return res.status(404).send({ status: false, message: "Admin data not found" })
@@ -246,9 +195,11 @@ export const deleteAdmin = async (req, res) => {
         //authorization:-
         if (checkAdminroles.roles == 'primary' || (userIdByparams === userIdByToken)) {
 
-            const adminUpdate = await Admin.deleteOne({ _id: userIdByparams });
+            const adminUpdate = await Admin.findOneAndUpdate({ _id: userIdByparams },{
+             deleted:true    
+            },{new:true});
 
-            res.status(200).send({ status: true, message: "admin is deleted"});
+            res.status(200).send({ status: true, message: "admin is deleted",data:adminUpdate});
 
         } else {
             return res.status(403).send({ status: false, message: "Unauthorize access" })

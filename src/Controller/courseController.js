@@ -1,12 +1,12 @@
 import Course from "../models/courseModel.js";
 import Admin from "../models/adminModel.js";
-import { isValid, isValidId} from '../validator/validator.js'
+import { isValid, isValidId} from '../validator/validator.js';
+import { Result,matchedData,validationResult } from 'express-validator';
 
 
 
 export const addCourse = async (req, res) => {
     try {
-        const { title, description,mrp, price, syllabus, duration, instructor, category } = req.body;
 
         const userIdByToken = req.userId;
 
@@ -15,47 +15,14 @@ export const addCourse = async (req, res) => {
 
         //authorization:-(only primary admin add course)
         if (checkAdminroles.roles == 'primary') {
-            if (!title) return res.status(400).send({ status: false, message: "title is required" });
 
-            const checktitle = await Course.findOne({ title: title })
-            if (checktitle) {
-                return res.status(400).send({ status: false, message: "course title is already exist" });
+
+            const error = validationResult(req);
+             //  console.log("error:",error);
+            if (!error.isEmpty()) {
+           return res.status(400).json({ errors: error.array()[0].msg});
             }
-            if (!description) return res.status(400).send({ status: false, message: "description is required" });
-
-            if (!mrp) return res.status(400).send({ status: false, message: "mrp is required" })
-            if (!Number(mrp)) {
-                return res.status(400).send({ status: false, message: "mrp must be a number" });
-            }
-            if (mrp < 0) {
-                return res.status(400).send({ status: false, message: "mrp not be less than zero" })
-            }
-
-            if (!price) return res.status(400).send({ status: false, message: "price is required" })
-            if (!Number(price)) {
-                return res.status(400).send({ status: false, message: "mrp must be a number" });
-            }
-            if (price < 0) {
-                return res.status(400).send({ status: false, message: "price not be less than zero" })
-            }
-
-            if (!isValid(syllabus)) return res.status(400).send({ status: false, message: "sylabbus is required" });
-
-            if (!duration) return res.status(400).send({ status: false, message: "course duration is required" })
-            if (!Number(duration)) {
-                return res.status(400).send({ status: false, message: "duration must be a number" });
-            }
-            if (duration < 0) {
-                return res.status(400).send({ status: false, message: "course duration not be less than zero" })
-            }
-
-            if (!instructor) return res.status(400).send({ status: false, message: "instructor is required" })
-
-
-            if (!category) return res.status(400).send({ status: false, message: "instructor is required" })
-            if (!["science", "technology", "business", "arts"].includes(category))
-                return res.status(400).send({ status: false, message: "category must be science,technology,business,arts" })
-
+           
             const createCourse = await Course.create(req.body)
 
             res.status(201).send({ status: true, message: "course is added successfully", data: createCourse })

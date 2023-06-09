@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import Admin from '../models/adminModel.js';
 
 
 export const authentication = function (req, res, next) {
@@ -22,7 +23,13 @@ export const authentication = function (req, res, next) {
                         return res.status(400).send({ status: false, message: err.message });
                     } else {
                         req.userId = data.userId;
-                        next();
+                        let adminExists = Admin.findOne({_id:req.userId,deleted:false})
+                        if(adminExists) {
+                            next();
+                        }
+                        else if(!adminExists){
+                            return res.send({message:"user data is already deleted"})
+                        }
                     }
                 });
             }

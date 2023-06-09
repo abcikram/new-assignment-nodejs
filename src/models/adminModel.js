@@ -8,7 +8,7 @@ const adminSchema = new mongoose.Schema(
         },
         phone: {
             type: String,
-            reaquired: true,
+            required: true,
             unique:true,
         },
         email: {
@@ -26,6 +26,10 @@ const adminSchema = new mongoose.Schema(
             enum: ["primary", "secondary"],
             required:true,
         },
+        deleted:{
+            type:Boolean,
+            default:false,
+        }
     }, {
     timestamps: true
   },

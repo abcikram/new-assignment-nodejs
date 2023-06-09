@@ -1,5 +1,15 @@
 import mongoose from "mongoose";
 
+
+const sylabbusSchema = new mongoose.Schema({
+    topic:{
+        type:String
+    },
+    addTopic:{
+        type:[String]
+    }
+})
+
 const courseSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -7,7 +17,7 @@ const courseSchema = new mongoose.Schema({
         required: true
     },
     description: {
-        type: String,
+        type: [String],
         required: true
     },
     mrp: {
@@ -19,7 +29,7 @@ const courseSchema = new mongoose.Schema({
         required: true
     },
     syllabus: {
-        type: String,
+        type: [sylabbusSchema],
         required: true
     },
     duration: {
