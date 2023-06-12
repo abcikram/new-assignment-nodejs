@@ -3,10 +3,12 @@ import mongoose from "mongoose";
 
 const sylabbusSchema = new mongoose.Schema({
     topic:{
-        type:String
+        type:String,
+        required:true
     },
     addTopic:{
-        type:[String]
+        type:[String],
+        required:true
     }
 })
 
