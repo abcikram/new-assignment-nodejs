@@ -1,14 +1,18 @@
 import express from "express";
-import router from "./routes/router.js";
+import adminRouter from './routes/adminRouter.js';
+import courseRouter from './routes/courseRouter.js';
+import contactRouter from './routes/contactRouter.js'
 import '../src/mongodb/db.js'
 
 
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({extended:false}))
 
-
-app.use('/', router)
+app.use('/admin',adminRouter);
+app.use('/course',courseRouter);
+app.use('/contact',contactRouter);
 
 const PORT = 5000;
 

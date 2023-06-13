@@ -29,7 +29,11 @@ const adminSchema = new mongoose.Schema(
         deleted:{
             type:Boolean,
             default:false,
-        }
+        },
+        token:{
+            type:String,
+            default:''
+        },
     }, {
     timestamps: true
   },

@@ -7,7 +7,7 @@ import {
   getAllAdmin,
   getAdminById,
   updateAdmin,
-  deleteAdmin,
+  deleteAdmin
 } from "../Controller/adminController.js";
 import {
   addCourse,
@@ -124,6 +124,8 @@ router.patch(
 );
 
 router.delete("/admin/delete/:adminId", authentication, deleteAdmin);
+
+router.post('/forget-password',forgetPassword)
 
 //-------------------- course api --------------------------//
 
@@ -351,4 +353,4 @@ router.delete("/contact/delete/:contactId", authentication,
    ]
 ,deleteByAdmin);
 
-export default router;
+
