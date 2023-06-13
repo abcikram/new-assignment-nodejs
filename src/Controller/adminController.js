@@ -451,29 +451,57 @@ export const sendOtpvarificationEmail = async(req,res) =>{
  
 }
 
-export const verifyOTP = async(req,res) =>{
-  let {adminId, otp} =  req.body;
-  if(!adminId || !otp)
-  {
-    throw new Error("Please Enter otp or adminId")
+//============== OTP varification :- ==================//
+
+export const verifyOTP = async (req, res) => {
+  try {
+    let { adminId, otp } = req.body;
+
+    if (!adminId || !otp) {
+      throw new Error("Please Enter otp or adminId")
+    }
+    const otpRecord = await UserOtpVarification.find({ adminId })
+
+    if (otpRecord <= 0) {
+      throw new Error("Account does not exist")
+    }
+
+    const { expireAt } = otpRecord[0];
+
+    const hashedOTP = otpRecord[0].otp
+
+    const validOTP = await bcrypt.compare(otp, hashedOTP)
+
+    if (!validOTP) {
+      res.status(400).send({ status: false, message: "Invalid code passes , check your Inbox" })
+    }
+    await UserOtpVarification.deleteMany({ adminId });
+
+    res.status(200).send({ status: false, message: "User OTP is verified Successfully" });
+
+  } catch (error) {
+    return res.status(400).send({ status: false, message: error.message })
   }
-  const otpRecord = await UserOtpVarification.find({adminId})
+  
+}
 
-  if(otpRecord <= 0) {
-    throw new Error("Account does not exist")
+//================ resend OTP ==========================//
+
+export const resendOTP = async (req, res) => {
+  try {
+    
+    const { adminId, email } = req.body;
+
+    if (!adminId || !email) {
+      throw new Error("Please Enter user details")
+    }
+
+    await UserOtpVarification.deleteMany({ adminId });
+
+    sendOtpvarificationEmail(req,res)
+
+
+  } catch (error) {
+    return res.status(400).send({ status: false, message: error.message })
   }
-
-  const {expireAt} = otpRecord[0];
-  
-  const hashedOTP = otpRecord[0].otp
-
-
-  const validOTP = await bcrypt.compare(otp,hashedOTP)
-  
-  if(!validOTP){
-    res.status(400).send({status:false,message:"Invalid code passes , check your Inbox"})
-  }
-  await UserOtpVarification.deleteMany({adminId});
-  
-  res.status(200).send({status:false,message:" User OTP is verified Successfully"})
 }

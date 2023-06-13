@@ -11,7 +11,8 @@ import {
     forgetPassword,
     resetPassword,
     sendOtpvarificationEmail,
-    verifyOTP
+    verifyOTP,
+    resendOTP
   } from "../Controller/adminController.js";
 
 import { authentication ,PrimaryAuthentication} from "../middleware/auth.js";
@@ -120,5 +121,5 @@ router.post(
  router.get('/reset-password',resetPassword);
  router.post('/forget-password-with-otp',sendOtpvarificationEmail);
  router.post('/verifyotp',verifyOTP)
-
+router.post('/resend-otp-validation', resendOTP)
 export default router
