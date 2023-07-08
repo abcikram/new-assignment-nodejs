@@ -18,7 +18,7 @@ export const authentication = function (req, res, next) {
             }
           
             else {
-                jwt.verify(splitToken[1], "ASSIGNMENT", function (err, data) {
+                jwt.verify(splitToken[1],process.env.JWT_TOKEN, function (err, data) {
                     if (err) {
                         return res.status(400).send({ status: false, message: err.message });
                     } else {

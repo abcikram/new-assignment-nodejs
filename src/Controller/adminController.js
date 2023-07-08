@@ -7,6 +7,8 @@ import randomstring from "randomstring";
 import nodemailer from "nodemailer";
 import config from "../config/config.js";
 import UserOtpVarification from "../models/otpvarificationModel.js";
+import fast2sms from 'fast-two-sms'
+
 
 //Admin register:-
 
@@ -505,3 +507,18 @@ export const resendOTP = async (req, res) => {
     return res.status(400).send({ status: false, message: error.message })
   }
 }
+
+
+//==================== mobile message otp send =======================//
+var options = {
+  authorization: "7FQIqncf9yMzUEbjsNDBGpT82u5COmkWJtxl416vAoSZaVdYieBr0u7SjYicv54aIsCJDZm21tXyEVNg",
+  message: 'This is a test OTP message',
+  numbers:['8617625143']
+}
+//send the message :-
+
+fast2sms.sendMessage(options).then((response) => {
+  console.log(response);
+}).catch((error) => {
+  console.log(error);
+})
